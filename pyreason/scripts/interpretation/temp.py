@@ -426,9 +426,9 @@ class Interpretation:
 				with objmode(start='f8'):
 					start = time.time()
 				rules_to_remove_idx.clear()
-				for idx, i in enumerate(rules_to_be_applied_node):
-					if i[0] == t:
-						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
+				for idx, rule_data in enumerate(rules_to_be_applied_node):
+					if rule_data[0] == t:
+						comp, l, bnd, immediate, set_static = rule_data[1], rule_data[2], rule_data[3], rule_data[4], rule_data[5]
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, comp, (l, bnd)):
 							override = True if update_mode == 'override' else False
@@ -470,9 +470,9 @@ class Interpretation:
 				with objmode(start='f8'):
 					start = time.time()
 				rules_to_remove_idx.clear()
-				for idx, i in enumerate(rules_to_be_applied_edge):
-					if i[0] == t:
-						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
+				for idx, rule_data in enumerate(rules_to_be_applied_edge):
+					if rule_data[0] == t:
+						comp, l, bnd, immediate, set_static = rule_data[1], rule_data[2], rule_data[3], rule_data[4], rule_data[5]
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
 						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge, predicate_map_edge)
 						changes_cnt += changes
@@ -2076,14 +2076,18 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# We replace Y by the sources of Z
 	elif clause_var_1 not in groundings and clause_var_2 in groundings:
 		for n in groundings[clause_var_2]:
-			es = numba.typed.List([(nn, n) for nn in reverse_neighbors[n]])
+			es = numba.typed.List.empty_list(edge_type)
+			for nn in reverse_neighbors[n]:
+				es.append((nn, n))
 			edge_groundings.extend(es)
 
 	# Case 3:
 	# We replace Z by the neighbors of Y
 	elif clause_var_1 in groundings and clause_var_2 not in groundings:
 		for n in groundings[clause_var_1]:
-			es = numba.typed.List([(n, nn) for nn in neighbors[n]])
+			es = numba.typed.List.empty_list(edge_type)
+			for nn in neighbors[n]:
+				es.append((n, nn))
 			edge_groundings.extend(es)
 
 	# Case 4:
@@ -2096,7 +2100,10 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 		else:
 			groundings_clause_var_2_set = set(groundings[clause_var_2])
 			for n in groundings[clause_var_1]:
-				es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings_clause_var_2_set])
+				es = numba.typed.List.empty_list(edge_type)
+				for nn in neighbors[n]:
+					if nn in groundings_clause_var_2_set:
+						es.append((n, nn))
 				edge_groundings.extend(es)
 
 	return edge_groundings
